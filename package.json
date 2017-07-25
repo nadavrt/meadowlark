@@ -1,0 +1,27 @@
+{
+  "name": "meadowlark",
+  "version": "0.0.0",
+  "description": "An example Express App",
+  "main": "meadowlark.js",
+  "scripts": {
+    "start": "node meadowlark.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nadavrt/meadowlark.git"
+  },
+  "keywords": [
+    "express",
+    "node.js",
+    "javascript"
+  ],
+  "author": "Nadav Rotchild",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/nadavrt/meadowlark/issues"
+  },
+  "dependencies": {
+    "express": "~4.15.3",
+    "express3-handlebars": "~0.5.2"
+  }
+}

@@ -1,0 +1,1 @@
+An example website running on node.js using the Express framework. This repo is used together with the Web Development with Node & Express book.
