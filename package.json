@@ -23,5 +23,9 @@
   "dependencies": {
     "express": "~4.15.3",
     "express3-handlebars": "~0.5.2"
+  },
+  "devDependencies": {
+    "mocha": "~3.4.2",
+    "chai": "~4.1.0"
   }
 }
