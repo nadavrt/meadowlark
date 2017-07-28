@@ -13,12 +13,21 @@ app.use( (req,res,next) => {
 	next();
 });
 
+app.get('/headers', (req,res) => {
+	res.set('Content-Type', 'text/plain');
+	var s = '';
+	for (var name in req.headers) s+= name + ': ' + req.headers[name] + '\n';
+	res.send(s);
+});
 app.get('/', (req,res) => res.render('home') );
 app.get('/about', (req,res) => {
 	res.render('about', { 
 		fortune: fortune.getFortune(), 
 		pageTestScript: '/qa/tests-about.js' 
 	}); 
+});
+app.get('/tours/:page', (req,res) => {
+	res.render('tours/' + req.params.page, { }); 
 });
 //Custom 404 function	
 app.use(function(req,res){
