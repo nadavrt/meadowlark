@@ -52,7 +52,7 @@ function getWeatherData(){
 				temp: '55.0 F (12.8C)'
 			}
 		]
-	}
+	};
 }
 
 app.use((req,res, next) => {
