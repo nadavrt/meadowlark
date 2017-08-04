@@ -1,7 +1,7 @@
 const express = require('express');
 var app = express();
 var fortune = require('./lib/fortune.js');
-
+const credentials = require('./credentials.js');
 //Setup the handlebars view engine
 const handlebars = require('express3-handlebars').create({
 	defaultLayout: 'main',
@@ -19,6 +19,9 @@ app.set('view engine', 'handlebars');
 
 app.set('port', process.env.PORT || 3000);
 app.use(express.static(__dirname + '/public'));
+app.use(require('body-parser')());
+app.use(require('cookie-parser')(credentials.cookieSecret));
+app.use(require('express-session')());
 
 //QA Tests
 app.use( (req,res,next) => {
@@ -61,6 +64,13 @@ app.use((req,res, next) => {
 	next();
 });
 
+app.use((req,res, next) => {
+	//if there's a flash message transfer it to the context and delete it.
+	res.locals.flash = req.session.flash;
+	delete req.session.flash;
+	next();
+});
+
 app.get('/headers', (req,res) => {
 	res.set('Content-Type', 'text/plain');
 	var s = '';
@@ -69,6 +79,14 @@ app.get('/headers', (req,res) => {
 });
 app.get('/', (req,res) => res.render('home') );
 app.get('/about', (req,res) => {
+	if ( !req.signedCookies.monster )
+	{
+		res.cookie('monster', 'nom nom', {
+			maxAge: 1000*60*60*24*30, //One month 
+			signed: true
+		});
+	}
+
 	res.render('about', { 
 		fortune: fortune.getFortune(), 
 		pageTestScript: '/qa/tests-about.js' 
@@ -79,6 +97,31 @@ app.get('/tours/:page', (req,res) => {
 });
 
 app.get('/jquery-test', (req,res) => res.render('jquery-test', {}) );
+
+app.get('/newsletter', (req,res) => res.render('newsletter', {csrf: 'csrf token goes here'}));
+app.post('/newsletter', (req,res) => {
+	let name = req.body.name || '', email = req.body.email || '';
+	//input validation
+	if ( !email.match(VALID_EMAIL_REGEX) )
+	{
+		if (req.xhr) return res.json({error: 'Invalid email address'});
+		req.session.flash = {
+			type:    'danger',
+			intro:   'validation error!',
+			message: 'The email address you entered was not valid.',
+		};
+		return res.redirect(303, '/newsletter/archive');
+	}
+	
+});
+
+app.post('/process', (req,res) => {
+	console.log('Form (from querystring): ' + req.query.form);
+	console.log('CSRF token (from hidden form field: ' + req.body.csrf);
+	console.log('Name (from visible form field): ' + req.body.name);
+	console.log('Email (from visible form field): ' + req.body.email);
+	res.redirect(303, '/thank-you');
+});
 
 //Custom 404 function	
 app.use(function(req,res){
