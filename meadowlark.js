@@ -1,7 +1,11 @@
+//Modules
 const express = require('express');
-var app = express();
-var fortune = require('./lib/fortune.js');
+const app = express();
+const bodyParser = require('body-parser');
+const sendmail = require('sendmail')();
+const fortune = require('./lib/fortune.js');
 const credentials = require('./credentials.js');
+
 //Setup the handlebars view engine
 const handlebars = require('express3-handlebars').create({
 	defaultLayout: 'main',
@@ -16,10 +20,11 @@ const handlebars = require('express3-handlebars').create({
 });
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
-
 app.set('port', process.env.PORT || 3000);
+
+//Middelware
 app.use(express.static(__dirname + '/public'));
-app.use(require('body-parser')());
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(require('cookie-parser')(credentials.cookieSecret));
 app.use(require('express-session')());
 
@@ -28,6 +33,17 @@ app.use( (req,res,next) => {
 	res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
 	next();
 });
+
+
+//Send an email (direct email)
+// sendmail({
+//     from: 'info@meadowlark.com',
+//     to: 'nadavr@spotoption.com',
+//     subject: 'Test sendmail',
+//     html: '<p>Another Test</p><p><b>Now</b> with <u>HTML tags</u>.</p>',
+//   }, function(err, reply) {
+//     if (err) console.log('An eror has occured: ' + err);
+// });
 
 //Weather App
 function getWeatherData(){
@@ -122,6 +138,38 @@ app.post('/process', (req,res) => {
 	console.log('Email (from visible form field): ' + req.body.email);
 	res.redirect(303, '/thank-you');
 });
+
+app.post('/cart/checkout', (req,res) => {
+	let cart = req.session.cart;
+	if (!cart) next(new Error('Cart does not exist.'));
+	let name = req.body.name || '', 
+		email = req.body.email || '';
+	
+	//input validation
+	if ( !email.match(VALID_EMAIL_REGEX) ) return res.next(new Error('Invalid email address.'));
+
+	//Assign a random cart ID. Normally we would be using a database here.
+	cart.number = Math.random().toString().replace(/^0\.0*/, '');
+	cart.billing = {
+		name: name,
+		email: email
+	};
+
+	res.render('email/cart-thank-you', {layout: null, cart:cart}, (err,html) => {
+		if (err) console.log('error in email template');
+		sendmail({
+		    from: 'info@meadowlark.com',
+		    to: cart.billing.email,
+		    subject: 'Thank you for booking your trip with Meadowlark',
+		    html: html,
+		  }, function(err, reply) {
+		    if (err) console.log('Unable to send confirmation: ' + err.stack);
+		});
+	});
+
+	res.render('cart-thak-you', {cart: cart});
+}); //End of /cart/checkout post
+
 
 //Custom 404 function	
 app.use(function(req,res){
