@@ -182,6 +182,19 @@ app.use(function(err, req, res, next){
 	res.status('505').render('505');
 });
 
+switch(app.get('env')){
+	case 'production':
+		//For prod. Support daily log rotation.
+		app.use(require('express-logger')({
+			path: __dirname + '/log/requests.log'
+		}));
+		break;
+	
+	default:
+		//Compact, colorful dev logging
+		app.use(require('morgan')('dev'));
+}
+
 app.listen(app.get('port'), function(){
-	console.log('Express started on port' + app.get('port'));
+	console.log('Express started on port ' + app.get('port') + ' in ' + app.get('env') + ' mode.');
 });
